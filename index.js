@@ -1,4 +1,6 @@
 const express = require("express");
+// Requiring the worker file to use it
+const { Worker } = require("worker_threads");
 
 const app = express();
 const port = process.env.port || 3000;
@@ -8,11 +10,16 @@ app.get("/non-blocking", (req, res) => {
 });
 
 app.get("/blocking", async (req, res) => {
-  let counter = 0;
-  for (let i = 0; i < 20_000_000_000; i++) {
-    counter++;
-  }
-  res.status(200).send(`Result is ${counter}`);
+  // acessing the worker file
+  const worker = new Worker("./worker.js");
+
+  worker.on("message", (data) => {
+    res.status(200).send(`Result is ${data}`);
+  });
+
+  worker.on("error", (error) => {
+    res.status(404).send(`An error occured ${error}`);
+  });
 });
 
 app.listen(port, () => {
